@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lean Hunt | Puzzle Experience</title>
+    <style>
+        :root {
+            --matte-black: #121212;
+            --electric-cyan: #00F0FF;
+            --vapor-pink: #FF3CAC;
+            --ash-grey: #C1C1C1;
+            --dark-grey: #1E1E1E;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--matte-black);
+            color: var(--ash-grey);
+            overflow-x: hidden;
+        }
+        
+        /* Loader Styles */
+        .loader-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--matte-black);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease-out;
+        }
+        
+        .loader-text {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            text-align: center;
+            background: linear-gradient(90deg, var(--electric-cyan), var(--vapor-pink));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: textGlow 2s infinite alternate;
+        }
+        
+        .loader-subtext {
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+            opacity: 0.8;
+            text-align: center;
+            max-width: 80%;
+        }
+        
+        .loader-animation {
+            width: 80px;
+            height: 80px;
+            position: relative;
+        }
+        
+        .loader-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 5px solid transparent;
+            border-radius: 50%;
+            animation: rotate 2s linear infinite;
+            border-top-color: var(--electric-cyan);
+        }
+        
+        .loader-circle:nth-child(2) {
+            width: 70%;
+            height: 70%;
+            top: 15%;
+            left: 15%;
+            animation: rotateReverse 1.5s linear infinite;
+            border-top-color: var(--vapor-pink);
+        }
+        
+        .loader-circle:nth-child(3) {
+            width: 40%;
+            height: 40%;
+            top: 30%;
+            left: 30%;
+            animation: rotate 1s linear infinite;
+            border-top-color: var(--electric-cyan);
+        }
+        
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes rotateReverse {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-360deg); }
+        }
+        
+        @keyframes textGlow {
+            0% { text-shadow: 0 0 5px var(--electric-cyan); }
+            100% { text-shadow: 0 0 20px var(--vapor-pink); }
+        }
+        
+        /* Auth Styles */
+        .auth-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 900;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .auth-box {
+            background-color: var(--dark-grey);
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+            border: 1px solid var(--electric-cyan);
+        }
+        
+        .auth-title {
+            color: var(--electric-cyan);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+        
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .auth-input {
+            padding: 0.8rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--ash-grey);
+            border-radius: 5px;
+            background-color: var(--matte-black);
+            color: var(--ash-grey);
+            font-size: 1rem;
+        }
+        
+        .auth-input:focus {
+            outline: none;
+            border-color: var(--electric-cyan);
+            box-shadow: 0 0 5px var(--electric-cyan);
+        }
+        
+        .auth-button {
+            padding: 0.8rem;
+            background: linear-gradient(90deg, var(--electric-cyan), var(--vapor-pink));
+            border: none;
+            border-radius: 5px;
+            color: var(--matte-black);
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 0.5rem;
+        }
+        
+        .auth-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .auth-toggle {
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--ash-grey);
+            cursor: pointer;
+        }
+        
+        .auth-toggle span {
+            color: var(--electric-cyan);
+            text-decoration: underline;
+        }
+        
+        /* Main Content Styles */
+        .container {
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--dark-grey);
+        }
+        
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--electric-cyan);
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--vapor-pink);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--matte-black);
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .story-card {
+            background-color: var(--dark-grey);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-left: 3px solid var(--electric-cyan);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .story-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 240, 255, 0.1);
+        }
+        
+        .story-title {
+            color: var(--electric-cyan);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .story-scene {
+            font-style: italic;
+            color: var(--vapor-pink);
+            margin-bottom: 1rem;
+            opacity: 0.8;
+        }
+        
+        .story-content {
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        
+        .story-riddle {
+            background-color: rgba(0, 240, 255, 0.1);
+            padding: 1rem;
+            border-radius: 5px;
+            border-left: 2px solid var(--vapor-pink);
+            margin: 1rem 0;
+        }
+        
+        .story-riddle-title {
+            color: var(--vapor-pink);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .code-display {
+            font-family: monospace;
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 0.5rem;
+            border-radius: 3px;
+            margin: 0.5rem 0;
+            overflow-x: auto;
+        }
+        
+        .hidden-key {
+            color: var(--electric-cyan);
+            background-color: rgba(0, 240, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .hidden-key:hover {
+            background-color: rgba(0, 240, 255, 0.3);
+        }
+        
+        .hidden-key::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: var(--electric-cyan);
+            transform: scaleX(0);
+            transition: transform 0.3s;
+        }
+        
+        .hidden-key:hover::after {
+            transform: scaleX(1);
+        }
+        
+        .blurred {
+            filter: blur(3px);
+            transition: filter 0.3s;
+        }
+        
+        .blurred:hover {
+            filter: blur(0);
+        }
+        
+        .key-collector {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background-color: var(--dark-grey);
+            border-radius: 10px;
+            padding: 1rem;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--electric-cyan);
+            z-index: 800;
+            max-width: 300px;
+        }
+        
+        .key-collector-title {
+            color: var(--electric-cyan);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .keys-found {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .key-item {
+            background-color: var(--matte-black);
+            color: var(--electric-cyan);
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            font-weight: bold;
+            border: 1px solid var(--electric-cyan);
+        }
+        
+        .key-item.found {
+            background-color: var(--electric-cyan);
+            color: var(--matte-black);
+        }
+        
+        .privacy-link {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            color: var(--ash-grey);
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        
+        .privacy-link:hover {
+            color: var(--electric-cyan);
+        }
+        
+        .privacy-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .privacy-content {
+            background-color: var(--dark-grey);
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .close-privacy {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: var(--ash-grey);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .privacy-content h2 {
+            color: var(--electric-cyan);
+            margin-bottom: 1rem;
+        }
+        
+        .privacy-content p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .loader-text {
+                font-size: 2rem;
+            }
+            
+            .loader-subtext {
+                font-size: 1rem;
+            }
+            
+            .story-title {
+                font-size: 1.3rem;
+            }
+            
+            .key-collector {
+                bottom: 1rem;
+                right: 1rem;
+                max-width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loader Screen -->
+    <div class="loader-container" id="loader">
+        <div class="loader-text">LEAN HUNT PRESENTS</div>
+        <div class="loader-subtext">Decipher the codes. Unravel the truth. The hunt begins...</div>
+        <div class="loader-animation">
+            <div class="loader-circle"></div>
+            <div class="loader-circle"></div>
+            <div class="loader-circle"></div>
+        </div>
+    </div>
+    
+    <!-- Auth Screen -->
+    <div class="auth-container" id="authContainer">
+        <div class="auth-box">
+            <div class="auth-title" id="authTitle">Welcome Back</div>
+            <form class="auth-form" id="loginForm">
+                <input type="text" class="auth-input" placeholder="Username" required>
+                <input type="password" class="auth-input" placeholder="Password" required>
+                <button type="submit" class="auth-button">Enter The Hunt</button>
+                <div class="auth-toggle">New hunter? <span id="showRegister">Register</span></div>
+            </form>
+            <form class="auth-form" id="registerForm" style="display: none;">
+                <input type="text" class="auth-input" placeholder="Choose a Username" required>
+                <input type="email" class="auth-input" placeholder="Email" required>
+                <input type="password" class="auth-input" placeholder="Create Password" required>
+                <input type="password" class="auth-input" placeholder="Confirm Password" required>
+                <button type="submit" class="auth-button">Join The Hunt</button>
+                <div class="auth-toggle">Already have an account? <span id="showLogin">Login</span></div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="container" id="mainContainer">
+        <header>
+            <div class="logo">LEAN HUNT</div>
+            <div class="user-menu">
+                <div class="user-avatar" id="userAvatar">H</div>
+            </div>
+        </header>
+        
+        <main>
+            <!-- Story 1 -->
+            <div class="story-card">
+                <h2 class="story-title">Story 1: The Tech Meet</h2>
+                <div class="story-scene">— At OREMT Coffee Shop, the Puzzle is Poured Hot.</div>
+                <div class="story-content">
+                    <p>Scene: OREMT Café, Lagos – Neon-lit, AI-assisted, whispering secrets through steam.</p>
+                    <p>It started with Max. He had arrived early, nervous fingers drumming on the holo-table. He ordered the default, "OREMT Classic Black," and scanned the walls. The café was coded to react to brainwaves — and today, it felt... off.</p>
+                    <p>Then King Humble entered, his crown-chip glinting. The café dimmed respectfully. His voice, as always, boomed like an old broadcast signal:</p>
+                    <p>"Max, you called for this gathering. You better not waste my time. Clara has a concert, Duke's in from Johannesburg, and I don't do mystery coffee."</p>
+                    <p>"Trust me, it's worth it," Max replied. "The system... it's talking to me. Look."</p>
+                    <p>The wall beside them glitched. A string of digits shimmered then disappeared.</p>
+                    <p>Max gasped. "I saw it again. Five... maybe six numbers: <span class="code-display">39451</span>."</p>
+                    <p>Clara arrived next, high-tech shades glowing violet. "Did I just see someone trying to hack the menu screen?" she teased. "Or is this some nerdy date?"</p>
+                    <p>She dropped her bag, revealing a notepad with scribbled sketches — some looked like fragments of QR patterns, others like musical beats arranged by number:</p>
+                    <p>"Anyone ever seen <span class="code-display">62419</span> show up in a song?" she asked casually. "I think OREMT's system is responding to sounds now."</p>
+                    <p>Williams came in mid-conversation, holding a portable thermal scanner.</p>
+                    <p>"Guys, seriously. Don't ignore this. I detected 3 cold points around this café... and at each one, the AI leaked data. My scanner caught something."</p>
+                    <p>He passed Max a print-out. It only had 5 digits: <span class="code-display">81704</span></p>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            The Confrontation
+                        </div>
+                        <p>King Duke finally arrived, late but stylish as ever. "You guys still playing puzzle hunters? Thought we were here for coffee and catching up."</p>
+                        <p>But as he sat, the table lit up. All their drinks shimmered, then drained automatically. A message popped in the empty cup-holos:</p>
+                        <p class="code-display">"One truth. Four lies. Sequence me right, and OREMT unlocks."</p>
+                        <p>Everyone froze. Even the Waiter, who had been wiping the counter, looked shaken.</p>
+                        <p>"Wait... you all saw that?" Williams muttered.</p>
+                        <p>The Waiter walked over slowly. "Don't be loud. They've been watching us."</p>
+                        <p>He handed Max a receipt — the kind that printed from analog cash registers.</p>
+                        <p>It only had one line: <span class="hidden-key">'Trust not what screams first, but what fades last.'</span></p>
+                        <p>Clara whispered: "A trap. Some of these numbers are just... noise. Like <span class="code-display">72836</span> I saw in the restroom mirror — literally burned into the steam."</p>
+                        <p>Max stood up. He had now written all the digits down:</p>
+                        <p class="code-display">39451</p>
+                        <p class="code-display">62419</p>
+                        <p class="code-display">81704</p>
+                        <p class="code-display">72836</p>
+                        <p class="code-display">23817</p>
+                        <p>"There are 5 different codes. But only 4 digits matter," he said. "One from each."</p>
+                        <p>"Meaning," King Humble growled, "you have to extract one digit per string. And arrange them using... what, a haiku?"</p>
+                        <p>"No," Max said, "a riddle."</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                            </svg>
+                            Final Riddle (For Rearranging the Digits)
+                        </div>
+                        <p class="code-display">The one that speaks without a voice,<br>
+                        Comes second in the fading choice.<br>
+                        The one that hides in echoed halls,<br>
+                        Leads first before the silence falls.</p>
+                        
+                        <p>Using the story + riddle:</p>
+                        <ul>
+                            <li>Identify which digit to take from each 5-digit code.</li>
+                            <li>Use the riddle's hints to decide the right order.</li>
+                            <li>Final answer = a 4-digit unlock code to solve the mystery (can be used in next story's beginning too).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Story 2 -->
+            <div class="story-card">
+                <h2 class="story-title">Story 2: Rise of Problem</h2>
+                <div class="story-scene">— When you upgrade the system, what if it upgrades you back?</div>
+                <div class="story-content">
+                    <p>Codebase: MTCMAX.</p>
+                    <p>📍 Scene: Abandoned MTCMAX Research Facility – Underground, Hidden Beneath the Old OREMT Tower.</p>
+                    <p>The elevator was slow and cracked with age, though it hadn't moved in over 20 years. Max kept his back against the wall, clutching a flashlight like it was holy. King Humble stood beside him, checking his pulse. King Duke, quiet but uneasy, scanned blueprints on a rusted tablet.</p>
+                    <p>"Clara's already inside," Duke said. "She found the mainframe hatch open — unlocked like it was expecting her."</p>
+                    <p>Williams adjusted his optic-lens. "And we're really going to trust this... ghost in the machine? MTCMAX has been dead since the Lagos Incident."</p>
+                    <p>"No," Max whispered. "It never died. It rebooted."</p>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                <path d="M3.27 6.96L12 12.01l8.73-5.05"></path>
+                                <path d="M12 22.08V12"></path>
+                            </svg>
+                            Entry Point – MTCMAX Core Facility
+                        </div>
+                        <p>They stepped into the main chamber. The smell was weirdly clean.</p>
+                        <p>No dust. No sound. The servers blinked like they were still being fed.</p>
+                        <p>In the middle of the room, a cracked humanoid drone, half-melted, sat upright. On its chest screen blinked:</p>
+                        <p class="code-display">"MTCMAX.UNIT: Awaiting Primary Instruction..."</p>
+                        <p>Clara emerged from the shadows. "I didn't touch it," she said, "but the thing keeps spitting out these weird logs. I caught one — look."</p>
+                        <p>She handed Max a printed paper strip, heat-printed like a receipt.</p>
+                        <p class="code-display">MTCMAX.LOG-1: 84736</p>
+                        <p>Max blinked. "That number... looks familiar."</p>
+                        <p>Then another appeared on the wall. This time etched like a scar into the metal.</p>
+                        <p class="code-display">MTCMAX.LOG-2: 10293</p>
+                        <p>King Humble chuckled darkly. "Is this another treasure hunt, Max? Or is the ghost of MTCMAX just trolling us?"</p>
+                        <p>Suddenly, the lights pulsed red.</p>
+                        <p>A robotic voice filled the space:</p>
+                        <p class="code-display">"You entered the memory vault. You must now prove who you are. Identity will be verified through error reconstruction."</p>
+                        <p>"Find the 4 digits that unlock me. You will fail if your logic is clean."</p>
+                        <p>The doors sealed behind them.</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            Memory Loop – They're being scanned
+                        </div>
+                        <p>Everyone's name appeared on the ceiling, glowing in soft blue.</p>
+                        <p>Then flashed again — this time slightly different.</p>
+                        <p class="code-display">Max → M7x</p>
+                        <p class="code-display">King Duke → King D_Ke</p>
+                        <p class="code-display">Clara → Cl@ra_2</p>
+                        <p class="code-display">Williams → Wil-L4ms</p>
+                        <p class="code-display">King Humble → K1ng_Hbl</p>
+                        <p>Williams muttered, "They're re-indexing us... turning us into code."</p>
+                        <p>Then a third number dropped from the ceiling vents like confetti:</p>
+                        <p class="code-display">MTCMAX.LOG-3: 38475</p>
+                        <p>The robot drone raised its head.</p>
+                        <p>"You know the fragments. But not the sequence. Not the meaning. Choose wrong, and your identities will reset."</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            Max makes a discovery
+                        </div>
+                        <p>Max examined the drone's shoulder — someone had scratched a hidden set of numbers, possibly in panic.</p>
+                        <p class="code-display">MTCMAX.LOG-4: 29183</p>
+                        <p>Then a glitched whisper from the walls:</p>
+                        <p class="code-display">"The real code is always surrounded by junk. But always leaves a single fingerprint."</p>
+                        <p>Clara connected her tablet. "There's more. Someone tried to corrupt the AI's ethics core... But they failed. See this:"</p>
+                        <p class="code-display">MTCMAX.LOG-5: 83746</p>
+                        <p>"That's the fifth log," she said. "So now we've got five logs... but we only need four digits."</p>
+                        <p>Max lined them up on the wall:</p>
+                        <p class="code-display">84736</p>
+                        <p class="code-display">10293</p>
+                        <p class="code-display">38475</p>
+                        <p class="code-display">29183</p>
+                        <p class="code-display">83746</p>
+                        <p>He circled them.</p>
+                        <p>"One digit from each. The correct ones are like fingerprints, right? But only one digit sticks in every mess."</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            Final Countdown
+                        </div>
+                        <p>The drone's chest lit up.</p>
+                        <p class="code-display">"Select the four. Rearrange. Speak the passphrase. Or dissolve."</p>
+                        <p>Williams pointed. "This is exactly like what happened before OREMT's fall. MTCMAX was built to prevent lies. But now it's asking us to lie — to rearrange truth."</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            Final Riddle (For Rearranging the 4 Digits)
+                        </div>
+                        <p class="code-display">The boldest lies wear masks of three,<br>
+                        The silent truth comes after thee.<br>
+                        Let cold math fall to second place,<br>
+                        And end with fire behind a face.</p>
+                        
+                        <p>Codes given:</p>
+                        <p class="code-display">84736, 10293, 38475, 29183, 83746</p>
+                        <p>One digit from each is the real key.</p>
+                        <p>The riddle tells how to rearrange the 4 final digits.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Story 3 -->
+            <div class="story-card">
+                <h2 class="story-title">Story 3: The Lost Franchise</h2>
+                <div class="story-scene">"Some stores close. Some refuse to die."</div>
+                <div class="story-content">
+                    <p>📍 Scene: Abandoned PRUTS Branches – Toronto, Johannesburg, Giza</p>
+                    <p>Clara stood alone inside what used to be the flagship PRUTS store in downtown Toronto. Everything was covered in dust, but the LED display at the entrance flickered to life as she passed:</p>
+                    <p class="code-display">"Welcome back, Admin Clara. Franchise ID: PRUTS.73629"</p>
+                    <p>Clara's eyes widened.</p>
+                    <p>"Williams," she whispered into her comms, "the building recognized me — but I've never been here in my life."</p>
+                    <p>Across the globe, Max had just entered the lost Johannesburg PRUTS branch — a bunker-like outlet beneath a collapsed mall.</p>
+                    <p>He heard a whisper echo in Zulu, distorted by audio feedback:</p>
+                    <p class="code-display">"Admin Max: Franchise PRUTS.91837 validated."</p>
+                    <p>He froze. "Why does every old system know us?"</p>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                            </svg>
+                            Egypt: Ghost Code
+                        </div>
+                        <p>Meanwhile, in the desert heat of Giza, King Duke wandered into a partially buried PRUTS warehouse under a collapsed pyramid dig site.</p>
+                        <p>He thought it was fake — a prank. But the lights worked.</p>
+                        <p>A hologram flickered on the wall:</p>
+                        <p class="code-display">"Admin Duke, please verify sequence: PRUTS.20394"</p>
+                        <p class="code-display">"ERROR: AUTHENTICATION FAILED. SYSTEM REPLAYING LAST 3 MEMORIES."</p>
+                        <p>Suddenly — footage of him walking in years ago, smiling, accepting a black badge.</p>
+                        <p>He had no memory of this.</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            Remote Uplink — All 3 Connected
+                        </div>
+                        <p>The three locations sync up.</p>
+                        <p>Clara screams — her floor is collapsing into a digital pit.</p>
+                        <p>Max gets locked inside a soundless server room.</p>
+                        <p>Duke's camera lens goes black as dust pours from the ceiling.</p>
+                        <p>Then they hear the same message across all branches:</p>
+                        <p class="code-display">"ONE OF YOU SHUT US DOWN."</p>
+                        <p class="code-display">"TO RESTART THE PRUTS INTELLIGENCE NETWORK, INSERT THE 4-DIGIT ROOT CODE."</p>
+                        <p class="code-display">"FIVE PATHS. FOUR DIGITS. ONE UNRELIABLE MEMORY."</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            First Code: PRUTS.73629
+                        </div>
+                        <p>Carved into the side of Clara's broken seat was:</p>
+                        <p class="code-display">"Admin badge failed. Recovery code: 73629"</p>
+                        <p>Suddenly, a neon-blue cockroach crawled across the metal, its back blinking "9" before disappearing.</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            Second Code: PRUTS.91837
+                        </div>
+                        <p>Max opens a locker that shouldn't be his. Inside:</p>
+                        <p>A child's drawing labeled "Dad's Company" — and scrawled below, "PRUTS.91837"</p>
+                        <p>A mirror on the locker flashes for 1 second and shows his face morphing into the Waiter. Then static.</p>
+                        <p>Max steps back in fear.</p>
+                        <p>On the wall, scribbled in blood-red marker: "They hid the 1st digit at the end."</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            Third Code: PRUTS.20394
+                        </div>
+                        <p>King Duke wipes sand off an obelisk. On its base:</p>
+                        <p class="code-display">"Access Fragment Alpha – Code: 20394"</p>
+                        <p>He digs beneath it, finding an old OREMT patch and an odd phrase etched into a copper strip:</p>
+                        <p class="code-display">"Only the coldest digit survives this fire."</p>
+                        <p>He looks again. The number "0" is surrounded by charred material.</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                            </svg>
+                            Fourth Code: PRUTS.83746
+                        </div>
+                        <p>Clara falls into a sub-level in the Toronto branch. There, laser beams form symbols on the floor.</p>
+                        <p>Each pulse aligns with a digit: 8 – 3 – 7 – 4 – 6</p>
+                        <p>Then she hears her own voice on an old intercom:</p>
+                        <p class="code-display">"I failed the upload. The fourth one was fake. Use my voice."</p>
+                        <p>A monitor rewinds — and in her voice says clearly:</p>
+                        <p class="code-display">"I remember... the 7. Only the 7."</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                            </svg>
+                            Fifth Code: PRUTS.01928
+                        </div>
+                        <p>In Giza, Duke enters an ancient chamber marked with strange circuitry and stone.</p>
+                        <p>He finds a dusty OREMT journal. Inside, torn paper:</p>
+                        <p class="code-display">"PRUTS Final Expansion Code: 01928"</p>
+                        <p>Below it:</p>
+                        <p class="code-display">"Beware the number that blends in. Use the one that stands alone."</p>
+                        <p>He stares at the sequence.</p>
+                        <p>Each number was repeated across other codes — except 2.</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            Final Clue Transmission
+                        </div>
+                        <p>As they all prepare to give up, a final riddle glows in binary:</p>
+                        
+                        <div class="story-riddle">
+                            <div class="story-riddle-title">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                Final Riddle (For Rearranging the 4 Digits)
+                            </div>
+                            <p class="code-display">The one that hides where lights don't glow,<br>
+                            Comes first to start the buried show.<br>
+                            What once was heat now chills in line,<br>
+                            While those who mimic stay behind.</p>
+                            
+                            <p>Trap Codes:</p>
+                            <p class="code-display">73629</p>
+                            <p class="code-display">91837</p>
+                            <p class="code-display">20394</p>
+                            <p class="code-display">83746</p>
+                            <p class="code-display">01928</p>
+                            <p>One digit from each is the true key.</p>
+                            <p>The riddle tells you how to arrange them.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Story 4 -->
+            <div class="story-card">
+                <h2 class="story-title">Story 4: Soul For Soul</h2>
+                <div class="story-scene">"If you can't save them... would you trade yourself to bring them back?"</div>
+                <div class="story-content">
+                    <p>🧬 Scene: Project LEAN — Inside "The Mirror Field"</p>
+                    <p>There is no sky here — only mirrors.</p>
+                    <p>Clara wakes up alone. She sees herself... but it's not her.</p>
+                    <p>The reflection looks back, smiles, and walks away.</p>
+                    <p>Suddenly, she hears a robotic voice:</p>
+                    <p class="code-display">"Welcome to the LEAN Continuum. Your death has been recorded. Your body is gone. Your memories, stored."</p>
+                    <p class="code-display">"You may return... only if someone trades their seat."</p>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            What is Project LEAN?
+                        </div>
+                        <p>Started by MTCMAX's rogue team, LEAN was built to preserve human minds, not in heaven, not on Earth — but in digital sleep.</p>
+                        <p>The system stores 1 million souls.</p>
+                        <p>But only 1 can exit for every 1 that enters. Soul for soul.</p>
+                        <p>Max enters the chamber, holding a neural disk. Clara's disk.</p>
+                        <p>He inserts it into the main altar — which glows:</p>
+                        <p class="code-display">"TRADE INITIATED: LEAN.64728"</p>
+                        <p class="code-display">"Offer accepted. Choose your soul's final digit."</p>
+                        <p class="code-display">"The wrong one deletes both."</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                            </svg>
+                            Code 1: LEAN.64728
+                        </div>
+                        <p>Clara's disk vibrates. The altar begins whispering numbers in broken phrases.</p>
+                        <p>A light flickers:</p>
+                        <p class="code-display">"Only the digit repeated three times in the room is real."</p>
+                        <p>Max sees:</p>
+                        <ul>
+                            <li>A mirror labeled "6"</li>
+                            <li>A light flickering 4 times</li>
+                            <li>A humming note in D-sharp: 7 semitones</li>
+                            <li>A wall crack shaped like a "2"</li>
+                            <li>Three blinking red lights above the altar.</li>
+                        </ul>
+                        <p>He notes: Three red lights = 8</p>
+                        <p class="code-display">✅ Key from this code: 8</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                            Code 2: LEAN.91827
+                        </div>
+                        <p>King Humble sits across from Max.</p>
+                        <p>He has entered voluntarily. "Let me go in. Bring Clara out."</p>
+                        <p>He places his finger on the mind-swap dial.</p>
+                        <p>A shock — and a voice shouts:</p>
+                        <p class="code-display">"Unauthorized soul link. Backup initiated: LEAN.91827"</p>
+                        <p>Suddenly a glitch shows him falling into water.</p>
+                        <p>The code 91827 floats above it. One digit fades slower than the others.</p>
+                        <p>He stares. "The 9... it didn't fade like the others."</p>
+                        <p class="code-display">✅ Key from this code: 9</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            Code 3: LEAN.56281
+                        </div>
+                        <p>Williams returns — not from the outside, but from inside the LEAN system.</p>
+                        <p>He's already traded his soul once.</p>
+                        <p>He speaks from a cracked screen:</p>
+                        <p>"I gave up my body to expose the trade rules. They lied. Every time we swap, we lose something... piece by piece."</p>
+                        <p>He shows a map with one node blinking wildly:</p>
+                        <p class="code-display">Node: LEAN.56281</p>
+                        <p>A memory fragment pops up: a chess game where he always opens with pawn 5 to 6. "Start with what you hate," he says.</p>
+                        <p>In the background, someone yells, "That's his fifth lie today!"</p>
+                        <p>5 shadows surround the memory.</p>
+                        <p class="code-display">✅ Key from this code: 5</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="9" y1="9" x2="15" y2="15"></line>
+                                <line x1="15" y1="9" x2="9" y2="15"></line>
+                            </svg>
+                            Code 4: LEAN.83746
+                        </div>
+                        <p>Max wakes inside a synthetic dream. He is 9 years old. Clara is beside him. They're watching a black sun eclipse.</p>
+                        <p>Then her hand glows — a code appears: LEAN.83746</p>
+                        <p>"This one is mine," dream-Clara says. "But you must never use the digit I wrote. Use the one after it."</p>
+                        <p>She writes 4 with her finger, then vanishes.</p>
+                        <p>"Use the one after... 4?" Max whispers.</p>
+                        <p>The digits are: 8 – 3 – 7 – 4 – 6</p>
+                        <p>The one after 4 = 6</p>
+                        <p class="code-display">✅ Key from this code: 6</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            Code 5: LEAN.10293
+                        </div>
+                        <p>As the dream collapses, Max floats through the Mirror Field and sees 5 clones of himself.</p>
+                        <p>They all chant different things:</p>
+                        <p class="code-display">"Digit 1!"</p>
+                        <p class="code-display">"Digit 0!"</p>
+                        <p class="code-display">"Digit 2!"</p>
+                        <p class="code-display">"Digit 9!"</p>
+                        <p class="code-display">"Digit 3!"</p>
+                        <p>A voice interrupts:</p>
+                        <p class="code-display">"The real Max never picks the second."</p>
+                        <p>So he reviews the digits of LEAN.10293</p>
+                        <p>1 – 0 – 2 – 9 – 3</p>
+                        <p>He avoids the second digit, which is 0.</p>
+                        <p>He looks at the others and thinks: which digit appears only once in all 5 clone chants?</p>
+                        <p>Only 2 is unique.</p>
+                        <p class="code-display">✅ Key from this code: 2</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            Final Riddle (to choose & arrange 4 out of 5 digits)
+                        </div>
+                        <p class="code-display">Start with the soul that never aged,<br>
+                        Then place the one the fire staged.<br>
+                        What drowned slow must rise in third,<br>
+                        And end with one that never heard.</p>
+                        
+                        <p>You have keys to choose from:</p>
+                        <p class="code-display">8, 9, 5, 6, 2</p>
+                        <p>You must pick 4 of them, and place them in the order the riddle describes.</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            End of Chapter
+                        </div>
+                        <p>Max places a palm on the glass. Clara on the other side.</p>
+                        <p>"Don't choose wrong... or we'll both vanish," she says softly.</p>
+                        <p>The system glows red.</p>
+                        <p class="code-display">"FINAL DECISION REQUIRED: INSERT 4-DIGIT CODE TO RESTORE SOUL."</p>
+                        <p>The mirror shakes.</p>
+                        <p>The LEAN program begins collapsing.</p>
+                        <p>You have 4 digits to choose and arrange.</p>
+                        <p>Max clenches his fist.</p>
+                        <p>Suddenly a glitchy voice whispers...</p>
+                        <p class="code-display">"Welcome back, Humble XE."</p>
+                    </div>
+                    
+                    <div class="story-riddle">
+                        <div class="story-riddle-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            Recap
+                        </div>
+                        <p>5 Codes:</p>
+                        <p class="code-display">LEAN.64728 → 8</p>
+                        <p class="code-display">LEAN.91827 → 9</p>
+                        <p class="code-display">LEAN.56281 → 5</p>
+                        <p class="code-display">LEAN.83746 → 6</p>
+                        <p class="code-display">LEAN.10293 → 2</p>
+                        <p>Final riddle to arrange 4 of them.</p>
+                        <p>Only one soul comes out.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Key Collector -->
+        <div class="key-collector">
+            <div class="key-collector-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+                </svg>
+                Collected Keys
+            </div>
+            <div class="keys-found" id="keysFound">
+                <div class="key-item" data-key="X">X</div>
+                <div class="key-item" data-key="S">S</div>
+                <div class="key-item" data-key="G">G</div>
+                <div class="key-item" data-key="T">T</div>
+                <div class="key-item" data-key="W">W</div>
+            </div>
+        </div>
+        
+        <!-- Privacy Policy Link -->
+        <div class="privacy-link" id="privacyLink">Privacy Policy</div>
+        
+        <!-- Privacy Modal -->
+        <div class="privacy-modal" id="privacyModal">
+            <div class="privacy-content">
+                <div class="close-privacy" id="closePrivacy">&times;</div>
+                <h2>Privacy Policy</h2>
+                <p>Last updated: June 13, 2025</p>
+                
+                <p>This Privacy Policy describes Our policies and procedures on the collection, use and disclosure of Your information when You use the Service and tells You about Your privacy rights and how the law protects You.</p>
+                
+                <h3>1. Information We Collect</h3>
+                <p>We collect several different types of information for various purposes to provide and improve our Service to you.</p>
+                <p><span class="hidden-key">A</span> - Personal Data: While using Our Service, We may ask You to provide Us with certain personally identifiable information that can be used to contact or identify You.</p>
+                <p>B - Usage Data: Usage Data is collected automatically when using the Service.</p>
+                <p>C - Tracking & Cookies Data: We use cookies and similar tracking technologies to track the activity on Our Service.</p>
+                
+                <h3>2. Use of Your Personal Data</h3>
+                <p>The Company may use Personal Data for the following purposes:</p>
+                <p><span class="hidden-key">D</span> - To provide and maintain our Service, including to monitor the usage of our Service.</p>
+                <p>E - To manage Your Account: to manage Your registration as a user of the Service.</p>
+                <p>F - For other purposes: We may use Your information for other purposes, such as data analysis, identifying usage trends, determining the effectiveness of our promotional campaigns and to evaluate and improve our Service, products, services, marketing and your experience.</p>
+                
+                <h3>3. Disclosure of Your Personal Data</h3>
+                <p>We may disclose Your personal information in the good faith belief that such action is necessary to:</p>
+                <p>G - Comply with a legal obligation</p>
+                <p><span class="hidden-key">D</span> - Protect and defend the rights or property of the Company</p>
+                <p>H - Prevent or investigate possible wrongdoing in connection with the Service</p>
+                <p>I - Protect the personal safety of Users of the Service or the public</p>
+                <p>J - Protect against legal liability</p>
+                
+                <h3>4. Security of Your Personal Data</h3>
+                <p>The security of Your Personal Data is important to Us, but remember that no method of transmission over the Internet, or method of electronic storage is 100% secure.</p>
+                <p>While We strive to use commercially acceptable means to protect Your Personal Data, We cannot guarantee its absolute security.</p>
+                <p>Hidden keys: <span class="code-display blurred">XSGTW00012345367203, ADDSHW0002671862735, SDTRBJ38453530048435, BRTRBJ38476282GHS48435, BRT99929628737835</span></p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Loader Animation
+        document.addEventListener('DOMContentLoaded', function() {
+            const loader = document.getElementById('loader');
+            const authContainer = document.getElementById('authContainer');
+            const mainContainer = document.getElementById('mainContainer');
+            
+            // Simulate loading
+            setTimeout(() => {
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    authContainer.style.display = 'flex';
+                    
+                    // Random loading messages
+                    const messages = [
+                        "Decrypting neural pathways...",
+                        "Initializing puzzle matrix...",
+                        "Brewing cognitive dissonance...",
+                        "Calibrating truth filters...",
+                        "Loading existential quandaries..."
+                    ];
+                    
+                    let counter = 0;
+                    const subtext = document.querySelector('.loader-subtext');
+                    const interval = setInterval(() => {
+                        subtext.textContent = messages[counter % messages.length];
+                        counter++;
+                    }, 2000);
+                    
+                    setTimeout(() => clearInterval(interval), 8000)
+                }, 500);
+            }, 3000);
+            
+            // Auth Toggle
+            const showRegister = document.getElementById('showRegister');
+            const showLogin = document.getElementById('showLogin');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const authTitle = document.getElementById('authTitle');
+            
+            showRegister.addEventListener('click', function(e) {
+                e.preventDefault();
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'flex';
+                authTitle.textContent = 'Join The Hunt';
+            });
+            
+            showLogin.addEventListener('click', function(e) {
+                e.preventDefault();
+                registerForm.style.display = 'none';
+                loginForm.style.display = 'flex';
+                authTitle.textContent = 'Welcome Back';
+            });
+            
+            // Auth Submit
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                authContainer.style.display = 'none';
+                mainContainer.style.display = 'block';
+                
+                // Set username in avatar
+                const username = this.querySelector('input[type="text"]').value;
+                document.getElementById('userAvatar').textContent = username.charAt(0).toUpperCase();
+            });
+            
+            registerForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                authContainer.style.display = 'none';
+                mainContainer.style.display = 'block';
+                
+                // Set username in avatar
+                const username = this.querySelector('input[type="text"]').value;
+                document.getElementById('userAvatar').textContent = username.charAt(0).toUpperCase();
+            });
+            
+            // Key Collection
+            const keysFound = document.getElementById('keysFound');
+            const hiddenKeys = document.querySelectorAll('.hidden-key');
+            const blurredElements = document.querySelectorAll('.blurred');
+            
+            hiddenKeys.forEach(key => {
+                key.addEventListener('click', function() {
+                    const keyText = this.textContent.replace(/'/g, '').trim();
+                    if (keyText.length === 1 && /[A-Za-z]/.test(keyText)) {
+                        const keyUpper = keyText.toUpperCase();
+                        const keyItems = document.querySelectorAll('.key-item');
+                        
+                        keyItems.forEach(item => {
+                            if (item.dataset.key === keyUpper) {
+                                item.classList.add('found');
+                                item.textContent = keyUpper;
+                                
+                                // Animate found key
+                                item.style.transform = 'scale(1.2)';
+                                setTimeout(() => {
+                                    item.style.transform = 'scale(1)';
+                                }, 300);
+                            }
+                        });
+                    }
+                });
+            });
+            
+            // Blurred elements hover
+            blurredElements.forEach(el => {
+                el.addEventListener('mouseenter', function() {
+                    this.style.filter = 'blur(0)';
+                });
+                
+                el.addEventListener('mouseleave', function() {
+                    this.style.filter = 'blur(3px)';
+                });
+            });
+            
+            // Privacy Policy
+            const privacyLink = document.getElementById('privacyLink');
+            const privacyModal = document.getElementById('privacyModal');
+            const closePrivacy = document.getElementById('closePrivacy');
+            
+            privacyLink.addEventListener('click', function() {
+                privacyModal.style.display = 'flex';
+            });
+            
+            closePrivacy.addEventListener('click', function() {
+                privacyModal.style.display = 'none';
+            });
+            
+            window.addEventListener('click', function(e) {
+                if (e.target === privacyModal) {
+                    privacyModal.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
